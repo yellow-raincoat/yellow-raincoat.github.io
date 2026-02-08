@@ -1,0 +1,32 @@
+{
+  "resources/css/main.css": {
+    "file": "assets/main-71e7c33b.css",
+    "isEntry": true,
+    "src": "resources/css/main.css"
+  },
+  "resources/css/partials/contact.css": {
+    "file": "assets/contact-6d80379e.css",
+    "isEntry": true,
+    "src": "resources/css/partials/contact.css"
+  },
+  "resources/css/partials/newsletter.css": {
+    "file": "assets/newsletter-57b34c36.css",
+    "isEntry": true,
+    "src": "resources/css/partials/newsletter.css"
+  },
+  "resources/css/vendor/prism.css": {
+    "file": "assets/prism-a1802bac.css",
+    "isEntry": true,
+    "src": "resources/css/vendor/prism.css"
+  },
+  "resources/js/main.js": {
+    "file": "assets/main-4ed993c7.js",
+    "isEntry": true,
+    "src": "resources/js/main.js"
+  },
+  "resources/js/vendor/prism.js": {
+    "file": "assets/prism-c7a6ebac.js",
+    "isEntry": true,
+    "src": "resources/js/vendor/prism.js"
+  }
+}
