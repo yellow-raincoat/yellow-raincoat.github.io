@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <id>https://yellowraincoat.co.uk/blog/feed/atom</id>
+    <title type="text">Yellow Raincoat's Blog</title>
+    <subtitle type="text">Feed for Yellow Raincoat's blog</subtitle>
+    <link xmlns="http://www.w3.org/2005/Atom" rel="self" type="application/atom+xml" href="https://yellowraincoat.co.uk/blog/feed/atom"/>
+    <updated>2026-05-26T13:19:32+00:00</updated>
+    <generator uri="https://github.com/mitydigital/feedamic" version="3.0.13">Feedamic: the Atom and RSS Feed generator for Statamic</generator>
+    <entry>
+        <title type="text">What are Evals Anyway?</title>
+        <link href="https://yellowraincoat.co.uk/blog/what-are-evals-anyway"/>
+        <id>https://yellowraincoat.co.uk/blog/what-are-evals-anyway</id>
+        <published>2026-05-20T23:00:00+00:00</published>
+        <updated>2026-05-21T14:34:56+00:00</updated>
+        <summary type="html">&lt;p&gt;&lt;img src=&quot;https://yellowraincoat.co.uk/img/containers/assets/blog/2026/05/21/what-are-evals-anyway.webp/c13882414e29c2355e0a97884469c1e3/what-are-evals-anyway.webp&quot; width=&quot;0&quot; height=&quot;0&quot; alt=&quot;What are Evals Anyway?&quot;&gt;&lt;/p&gt;
+                                    &lt;p&gt;AI workflows can't always be tested deterministically. As AI finds its way into our applications’ logic, a different testing strategy is needed: Evals.&lt;/p&gt;</summary>
+        <content type="html">&lt;p&gt;Developers are used to writing tests with clear outcomes – either the test passes, or it doesn’t. There’s no ambiguity in the signal, unless the test itself is flaky and needs fixing.&lt;/p&gt;
+&lt;p&gt;But as AI slowly finds its way into our applications’ logic, this reassuring determinism is being forced to make room for an eccentric and somewhat unpredictable cousin – probabilism.&lt;/p&gt;
+&lt;h2&gt;Probabilistic Workflows&lt;/h2&gt;
+&lt;p&gt;Large language models (LLMs) are probabilistic by design – give one of them the same prompt twice, and you'll get two different answers. Sometimes, the difference is cosmetic. Other times, it's significant enough to flip a binary outcome.&lt;/p&gt;
+&lt;p&gt;This variability is fine when you're having a chat-like interaction with an LLM, but when these prompts are part of the workflow underlying your application’s logic, and the output dictates whether the application is working or not, it becomes a problem.&lt;/p&gt;
+&lt;p&gt;Since you can't rely on a single outcome, the trick is to reason about a distribution of outcomes instead. One bad answer isn't necessarily a bug – it might just be an occasional fluke. Conversely, one good answer isn't proof your prompt works – you might just have got lucky. A good way to assess the reliability of an LLM integration is to run it across a representative set of cases and look at aggregate results.&lt;/p&gt;
+&lt;p&gt;That, in AI-engineering parlance, is what &lt;em&gt;evals&lt;/em&gt; are: evaluations of a model or workflow over a set of cases representative enough to make the averages meaningful. The term has been around for a while, but it’s more commonly used by people working on the model side. For application developers, evals are still a fuzzy concept – or at least that’s how it felt to me until recently.&lt;/p&gt;
+&lt;h2&gt;And Then I Needed Them&lt;/h2&gt;
+&lt;p&gt;Shortly after I started onboarding beta users onto &lt;a href=&quot;https://pixelwatcher.io/&quot;&gt;PixelWatcher&lt;/a&gt;, I gave them the ability to flag false positives. And they did.&lt;/p&gt;
+&lt;p&gt;A quick refresher: PixelWatcher monitors webpages for changes you describe in natural language. Under the hood, each check is essentially an LLM call – give it two screenshots and a sentence describing what to look for, and it returns whether that change happened. The wording of the prompt, the schema of the response, the way the user's intent is woven into the request – every one of these decisions affects accuracy. And accuracy, for a monitoring service, isn't optional.&lt;/p&gt;
+&lt;p&gt;As I looked into the reported false positives and started tweaking the parameters to address them, I realised I had no way to tell whether any new version was consistently better than the previous ones, beyond eyeballing a few examples. Which, given the probabilistic nature of it all, was worth roughly nothing.&lt;/p&gt;
+&lt;p&gt;I needed proper evals.&lt;/p&gt;
+&lt;h2&gt;PixelWatcher’s Eval Harness&lt;/h2&gt;
+&lt;p&gt;Here’s another fuzzy word – &lt;em&gt;harness&lt;/em&gt;. In this context, it basically means the infrastructure that runs the evals and collects the results. In PixelWatcher, I call it the sandbox. It’s got its own SQLite database and a bunch of CLI commands to run evaluations and render the results.&lt;/p&gt;
+&lt;p&gt;Each eval comprises three components:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Scenario: a concrete test case. A baseline screenshot, a current screenshot, a change description, and an expected outcome;&lt;/li&gt;
+&lt;li&gt;Experiment: a variation of the system prompt, user prompt, and response schema;&lt;/li&gt;
+&lt;li&gt;Model: the LLM model the scenario and experiment are run against (Gemini, GPT, etc.).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Eval results are stored in the SQLite database and committed to Git for future reference.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/assets/blog/2026/05/21/results.webp&quot; alt=&quot;Eval results screenshot&quot; /&gt;&lt;/p&gt;
+&lt;p class=&quot;capture&quot;&gt;Example output – I also keep track of model pricing for cost estimates.&lt;/p&gt;
+&lt;p&gt;The most useful trick I've been using for this is importing real false positives as scenarios. When a user reports an hallucination, I export the relevant check's screenshots and metadata into a new scenario, annotate it with the correct outcome, and from that point on, every prompt or model I evaluate has to do at least as well on it. That alignment between what I'm measuring and what actually hurts the user is what makes the harness genuinely useful.&lt;/p&gt;
+&lt;h2&gt;In Closing&lt;/h2&gt;
+&lt;p&gt;There's something a bit unsettling about this whole picture. This industry largely built itself on the idea that the same input yields the same output – that bugs are always findable, and tests are always fixable. Evals, and the probabilistic systems they exist to measure, are an admission that some of the software we're writing today doesn't work like that.&lt;/p&gt;
+&lt;p&gt;And maybe that's not entirely a bad thing. Humans aren't deterministic either – they give different answers on different days. They get tired and change their minds. They constantly adapt to their environment.&lt;/p&gt;
+&lt;p&gt;Maybe determinism was always a limiting factor in what programs are able to do. Maybe some of our software is now becoming a little more like the people it's built for, and that is opening up a whole new set of possibilities.&lt;/p&gt;</content>
+        <author>
+            <name>Yellow Raincoat</name>
+            <email>news@yellowraincoat.co.uk</email>
+        </author>
+    </entry>
+    <entry>
+        <title type="text">Caching Static Pages in a Laravel Application</title>
+        <link href="https://yellowraincoat.co.uk/blog/caching-static-pages-in-a-laravel-application"/>
+        <id>https://yellowraincoat.co.uk/blog/caching-static-pages-in-a-laravel-application</id>
+        <published>2026-04-03T23:00:00+00:00</published>
+        <updated>2026-04-04T10:46:42+00:00</updated>
+        <summary type="html">&lt;p&gt;&lt;img src=&quot;https://yellowraincoat.co.uk/img/containers/assets/blog/2026/04/04/caching-static-pages-in-a-laravel-application.webp/4da554339a8bb66ab47677eae6375224/caching-static-pages-in-a-laravel-application.webp&quot; width=&quot;0&quot; height=&quot;0&quot; alt=&quot;Caching Static Pages in a Laravel Application&quot;&gt;&lt;/p&gt;
+                                    &lt;p&gt;How to manage landing pages and other static content in Laravel, from a dedicated middleware group to cache rules in Cloudflare's free plan.&lt;/p&gt;</summary>
+        <content type="html">&lt;p&gt;If your Laravel application has one or more public-facing pages that never change between requests – e.g. a landing page, or a teaser like &lt;a href=&quot;https://pixelwatcher.io/&quot;&gt;PixelWatcher&lt;/a&gt; at the moment – there is no reason for them to reach your server on every visit. Serving those pages from a CDN edge cache instead is a small change with a meaningful impact on both performance and cost.&lt;/p&gt;
+&lt;p&gt;This post covers the full setup: from a dedicated middleware group in Laravel to the Cloudflare cache rules that wire it all together.&lt;/p&gt;
+&lt;h2&gt;The problem&lt;/h2&gt;
+&lt;p&gt;Out of the box, Laravel adds session and cookie handling to every response. Even for a page that doesn't use a session, the framework will set headers like &lt;code&gt;Set-Cookie&lt;/code&gt; and &lt;code&gt;Cache-Control: no-cache, private&lt;/code&gt;. CDNs typically treat these as signals not to cache the response, so every request hits your server.&lt;/p&gt;
+&lt;p&gt;The fix is to handle static and dynamic pages separately.&lt;/p&gt;
+&lt;h2&gt;Static routes&lt;/h2&gt;
+&lt;p&gt;First, create a dedicated route file for static pages (e.g. &lt;code&gt;routes/static.php&lt;/code&gt;):&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;&amp;lt;?php
+
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', fn () =&amp;gt; view('welcome'))-&amp;gt;name('home');
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Here, it contains a single route, pointing to the default &amp;quot;welcome&amp;quot; page.&lt;/p&gt;
+&lt;h2&gt;Middleware&lt;/h2&gt;
+&lt;p&gt;Then, create a dedicated middleware:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;&amp;lt;?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+final class SetStaticCacheHeaders
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $response = $next($request);
+
+        $response-&amp;gt;headers-&amp;gt;set(
+            'Cache-Control',
+            'public, max-age=0, s-maxage=3600, stale-while-revalidate=60',
+        );
+
+        $response-&amp;gt;headers-&amp;gt;remove('Set-Cookie');
+
+        return $response;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This produces the following &lt;code&gt;Cache-Control&lt;/code&gt; header:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;Cache-Control: public, max-age=0, s-maxage=3600, stale-while-revalidate=60
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;max-age=0&lt;/code&gt; tells browsers not to serve a stale copy without revalidating — so users always get a fresh response.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;s-maxage=3600&lt;/code&gt; tells shared caches (like Cloudflare's edge) to cache the response for one hour.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;stale-while-revalidate=60&lt;/code&gt; allows the CDN to serve a stale response while it fetches a fresh one in the background, keeping latency low.&lt;/p&gt;
+&lt;p&gt;The middleware also ensures that no &lt;code&gt;Set-Cookie&lt;/code&gt; header is present, so that the response won't contain a cookie that would otherwise prevent caching.&lt;/p&gt;
+&lt;h2&gt;Route declaration and middleware group&lt;/h2&gt;
+&lt;p&gt;Finally, declare our route file in &lt;code&gt;bootstrap/app.php&lt;/code&gt;, as well as a custom &lt;code&gt;static&lt;/code&gt; middleware group:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;return Application::configure(basePath: dirname(__DIR__))
+    -&amp;gt;withRouting(
+        web: __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
+        health: '/up',
+        then: function (): void {
+            Route::middleware('static')-&amp;gt;group(base_path('routes/static.php'));
+        },
+    )
+    -&amp;gt;withMiddleware(function (Middleware $middleware): void {
+        $middleware-&amp;gt;group('static', [SetStaticCacheHeaders::class]);
+    })
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The &lt;code&gt;static&lt;/code&gt; middleware group only has the &lt;code&gt;SetStaticCacheHeaders&lt;/code&gt;, deliberately omitting all session and cookie middlewares (as opposed to the &lt;code&gt;web&lt;/code&gt; middleware group, which is applied to all routes in &lt;code&gt;web.php&lt;/code&gt; by default).&lt;/p&gt;
+&lt;h2&gt;Cloudflare cache rules&lt;/h2&gt;
+&lt;p&gt;On its own, the middleware isn't enough – Cloudflare needs to be told when to cache and when to bypass, which is handled through Cloudflare’s Cache Rules.&lt;/p&gt;
+&lt;p&gt;Here, the order matters: the &lt;em&gt;bypass&lt;/em&gt; rules must come before the caching rule.&lt;/p&gt;
+&lt;p class=&quot;info&quot;&gt;&lt;span class=&quot;title&quot;&gt;Note &lt;/span&gt;The below is covered by Cloudflare’s free plan.&lt;/p&gt;
+&lt;h3&gt;Rule 1: Bypass stateful routes&lt;/h3&gt;
+&lt;p&gt;Some routes must never be cached, like anything involving authentication, Livewire AJAX calls, or internal framework endpoints.&lt;/p&gt;
+&lt;p&gt;Here is an example filter expression:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;(starts_with(http.request.uri.path, &amp;quot;/dashboard&amp;quot;) or
+ starts_with(http.request.uri.path, &amp;quot;/login&amp;quot;) or
+ starts_with(http.request.uri.path, &amp;quot;/auth&amp;quot;) or
+ starts_with(http.request.uri.path, &amp;quot;/livewire&amp;quot;) or
+ http.request.uri.path eq &amp;quot;/up&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For this rule, select &lt;em&gt;Bypass cache&lt;/em&gt; under &lt;em&gt;Cache eligibility&lt;/em&gt;:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/assets/blog/2026/04/04/rule-expression.webp&quot; alt=&quot;Rule expression screenshot&quot; /&gt;&lt;/p&gt;
+&lt;h3&gt;Rule 2: Bypass when session cookies are present&lt;/h3&gt;
+&lt;p&gt;Once a user is logged in, their requests carry &lt;code&gt;laravel_session&lt;/code&gt; and &lt;code&gt;XSRF-TOKEN&lt;/code&gt; cookies. You don't want to serve them a cached page that was built for an anonymous visitor.&lt;/p&gt;
+&lt;p&gt;Expression:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;(http.cookie contains &amp;quot;laravel_session&amp;quot; or
+ http.cookie contains &amp;quot;XSRF-TOKEN&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Also select &lt;em&gt;Bypass cache&lt;/em&gt; for this rule.&lt;/p&gt;
+&lt;h3&gt;Rule 3: Cache the static page&lt;/h3&gt;
+&lt;p&gt;Finally, the actual caching rule, targeting the home page:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;http.request.uri.path eq &amp;quot;/&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For this one, select &lt;em&gt;Eligible for cache&lt;/em&gt;, a custom 1-hour TTL for &lt;em&gt;Edge TTL&lt;/em&gt;, and &lt;em&gt;Respect origin TTL&lt;/em&gt; under &lt;em&gt;Browser TTL&lt;/em&gt;:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/assets/blog/2026/04/04/rule-settings.webp&quot; alt=&quot;Rule settings screenshot&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;Verifying it works&lt;/h2&gt;
+&lt;p&gt;Load your page and inspect the response headers. On the first request you should see:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;CF-Cache-Status: MISS
+Cache-Control: public, max-age=0, s-maxage=3600, stale-while-revalidate=60
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;On subsequent requests:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;CF-Cache-Status: HIT
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;No &lt;code&gt;Set-Cookie&lt;/code&gt; header should appear.&lt;/p&gt;
+&lt;p&gt;For dynamic pages, the opposite should be true – &lt;code&gt;CF-Cache-Status: DYNAMIC&lt;/code&gt; and &lt;code&gt;Cache-Control: no-cache, private&lt;/code&gt;, confirming that Cloudflare is bypassing the cache entirely.&lt;/p&gt;
+&lt;h2&gt;Resources&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Laravel’s &lt;a href=&quot;https://laravel.com/docs/13.x/routing&quot;&gt;Routing documentation&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Laravel’s &lt;a href=&quot;https://laravel.com/docs/13.x/middleware&quot;&gt;Middleware documentation&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Cloudflare &lt;a href=&quot;https://developers.cloudflare.com/cache/how-to/cache-rules/&quot;&gt;Cache Rules documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</content>
+        <author>
+            <name>Yellow Raincoat</name>
+            <email>news@yellowraincoat.co.uk</email>
+        </author>
+    </entry>
+    <entry>
+        <title type="text">Why I’m Building PixelWatcher</title>
+        <link href="https://yellowraincoat.co.uk/blog/why-im-building-pixelwatcher"/>
+        <id>https://yellowraincoat.co.uk/blog/why-im-building-pixelwatcher</id>
+        <published>2026-03-06T00:00:00+00:00</published>
+        <updated>2026-03-06T13:38:52+00:00</updated>
+        <summary type="html">&lt;p&gt;&lt;img src=&quot;https://yellowraincoat.co.uk/img/containers/assets/blog/2026/03/06/why-im-building-pixelwatcher.webp/4376403388cbb308d03aa9f73ac56392/why-im-building-pixelwatcher.webp&quot; width=&quot;0&quot; height=&quot;0&quot; alt=&quot;Why I’m Building PixelWatcher&quot;&gt;&lt;/p&gt;
+                                    &lt;p&gt;In many ways, it is a strange time to be building a SaaS. This article addresses some common concerns and further explains my approach with PixelWatcher.&lt;/p&gt;</summary>
+        <content type="html">&lt;p&gt;In many ways, it is a strange time to be building a SaaS. Between the doomsayers warning of an impending &lt;a href=&quot;https://techcrunch.com/2026/03/01/saas-in-saas-out-heres-whats-driving-the-saaspocalypse/&quot;&gt;SaaSpocalypse&lt;/a&gt; and social media teeming with people launching startups on their lunch breaks, aspiring entrepreneurs could easily feel dispirited – and confused.&lt;/p&gt;
+&lt;p&gt;Yet here I am, working on &lt;a href=&quot;https://pixelwatcher.io/&quot;&gt;PixelWatcher&lt;/a&gt;. So why now? Let me try and address some common concerns below, and further explain my approach.&lt;/p&gt;
+&lt;p class=&quot;info&quot;&gt;&lt;span class=&quot;title&quot;&gt;What is PixelWatcher?&lt;/span&gt;PixelWatcher is a website monitoring service. Give it a URL, describe the change you want to know about, and PixelWatcher notifies you when it happens. Register for early access &lt;a href=&quot;https://pixelwatcher.io&quot; &gt;here&lt;/a&gt;. As a beta user, you’ll get a free account with generous limits.&lt;/p&gt;
+&lt;h2&gt;The SaaS Model is Dead&lt;/h2&gt;
+&lt;p&gt;Companies are building their own CRMs. Individuals are vibe-coding project management tools. Crustacean-themed bots are ordering people’s shopping and answering their emails. Why would anyone pay for a SaaS when all digital needs can supposedly be fulfilled with the right prompt?&lt;/p&gt;
+&lt;p&gt;One word: Convenience.&lt;/p&gt;
+&lt;p&gt;Companies already have their own core business to run, and building internal solutions means &lt;em&gt;someone&lt;/em&gt; has to maintain them, whether AI is part of the process or not. It’s a distraction.&lt;/p&gt;
+&lt;p&gt;As for individuals, coming up with a setup that actually works still requires some technical know-how that only a few will bother acquiring. That part will get better, but it will take time. And my bet is that most people will still prefer using off-the-shelf products anyway – for the right price. I’ll come back to that.&lt;/p&gt;
+&lt;h2&gt;Everyone is Launching a SaaS&lt;/h2&gt;
+&lt;p&gt;Spend more than five minutes on X or LinkedIn and you will come across a product launch announcement or some aspirational post followed by the &lt;code&gt;#buildInPublic&lt;/code&gt; hashtag, leaving you with the strong impression that everyone and their uncle are starting companies these days.&lt;/p&gt;
+&lt;p&gt;But of course, they’re not. Well, at least not their uncle. While it’s true that building software is easier than ever, and that more and more people are doing it, there is also a lot of daylight between toying with an idea and launching a full-fledged product. Very few will actually get there, and building is only a small part of the story.&lt;/p&gt;
+&lt;h2&gt;Distribution is the Final Boss&lt;/h2&gt;
+&lt;p&gt;This is going to be the real challenge for me when it comes to PixelWatcher. I’ve got the technical background, but marketing is still a mystery to me. I’m currently trying to get more people to &lt;a href=&quot;https://pixelwatcher.io/&quot;&gt;sign up for early access&lt;/a&gt;, and this is already proving tricky.&lt;/p&gt;
+&lt;p&gt;While I’m convinced that people who are serious about building products still represent a tiny fraction of the population, the SaaS landscape is a competitive one nonetheless – and when it comes to distribution, incumbents have a significant advantage.&lt;/p&gt;
+&lt;p&gt;Which brings me to the next point.&lt;/p&gt;
+&lt;h2&gt;Many Companies Already do this&lt;/h2&gt;
+&lt;p&gt;Website monitoring is a crowded space. Well-established players are already dominating the market. So why am I &lt;a href=&quot;/blog/another-hat-in-the-ring/&quot;&gt;throwing my hat in that particular ring&lt;/a&gt;? Precisely because I tried the competition.&lt;/p&gt;
+&lt;p&gt;PixelWatcher is an idea born out of frustration. A few months ago, I found myself needing to monitor changes on a website that did not offer any kind of newsletter. I created an account on one of those monitoring services and was able to use their free plan for a while – until I needed to monitor another page. I quickly hit the free-checks limit, so I had a look at their paid plans, only to realise that their cheapest offer started at $10 per month. And they’re far from being the most expensive option out there.&lt;/p&gt;
+&lt;p&gt;I was already feeling &lt;a href=&quot;https://www.digitalroute.com/resources/glossary/subscription-fatigue/&quot;&gt;subscription fatigue&lt;/a&gt; like many others, and was absolutely not ready to spend that much every month for just a few more checks.&lt;/p&gt;
+&lt;p&gt;This got me thinking – how much would I actually pay for this? I came up with a number, and looked into whether it would be workable. PixelWatcher’s seed was planted.&lt;/p&gt;
+&lt;p&gt;I was also frustrated with the UX of most of these websites, and thought I could come up with a much simpler interface – one without all the bells and whistles. Just the essential features, for the right price.&lt;/p&gt;
+&lt;p&gt;Because in the end, that’s what it’s all about.&lt;/p&gt;
+&lt;h2&gt;It’s all About Price&lt;/h2&gt;
+&lt;p&gt;To be clear, I don’t believe in the SaaSpocalypse, for the reasons mentioned above (technical know-how, maintenance burden, convenience). But I do believe that many SaaS companies currently apply margins that are increasingly hard to justify, and that AI tools have opened a boulevard for leaner, cheaper competition to emerge.&lt;/p&gt;
+&lt;p&gt;In other words, while many SaaS products compete on features, I suspect the next wave will compete on efficiency.&lt;/p&gt;
+&lt;p&gt;This is PixelWatcher’s bet – that the website monitoring landscape is ripe for disruption, and that there is room for a service with a far more appealing &lt;em&gt;price-to-convenience&lt;/em&gt; ratio.&lt;/p&gt;
+&lt;h2&gt;In Closing&lt;/h2&gt;
+&lt;p&gt;Let’s not ignore the &lt;a href=&quot;https://www.citriniresearch.com/p/2028gic?hide_intro_popup=true&quot;&gt;potential wider implications&lt;/a&gt; of this paradigm shift. I honestly don’t know where this AI-powered Fourth Industrial Revolution ends. But for my part, I’m choosing to see it as an opportunity.&lt;/p&gt;
+&lt;p&gt;As already mentioned in &lt;a href=&quot;/blog/another-hat-in-the-ring/&quot;&gt;Another Hat in the Ring&lt;/a&gt;, if we’re about to enter an extended period of creative destruction on an unprecedented scale, I’d much rather be on the creative side.&lt;/p&gt;</content>
+        <author>
+            <name>Yellow Raincoat</name>
+            <email>news@yellowraincoat.co.uk</email>
+        </author>
+    </entry>
+    <entry>
+        <title type="text">Animate your Logo with Remotion and Claude Code</title>
+        <link href="https://yellowraincoat.co.uk/blog/animate-your-logo-with-remotion-and-claude-code"/>
+        <id>https://yellowraincoat.co.uk/blog/animate-your-logo-with-remotion-and-claude-code</id>
+        <published>2026-02-17T00:00:00+00:00</published>
+        <updated>2026-02-19T10:36:06+00:00</updated>
+        <summary type="html">&lt;p&gt;&lt;img src=&quot;https://yellowraincoat.co.uk/img/containers/assets/blog/2026/02/17/remotion-claude.avif/89181fdaf1d7b47fdf4ade5387515f9c/remotion-claude.avif&quot; width=&quot;0&quot; height=&quot;0&quot; alt=&quot;Animate your Logo with Remotion and Claude Code&quot;&gt;&lt;/p&gt;
+                                    &lt;p&gt;Want to animate your logo without learning motion design? This short tutorial shows how to create a production-ready animation using Remotion and Claude Code.&lt;/p&gt;</summary>
+        <content type="html">&lt;p class=&quot;info&quot;&gt;Note: This article assumes that you already have a Claude Code subscription. If you don’t, or if you’re not familiar with Claude Code yet, I recommend completing the first module of &lt;a href=&quot;https://ccforeveryone.com/&quot;&gt;this free course&lt;/a&gt; before continuing.&lt;/p&gt;
+&lt;p&gt;I am a backend developer by trade. I know nothing about motion design. Yet it only took me a couple of hours to animate PixelWatcher’s logo:&lt;/p&gt;
+&lt;video controls&gt;
+    &lt;source src=&quot;/assets/blog/2026/02/17/logowithtagline.mp4&quot; type=&quot;video/mp4&quot;&gt;
+&lt;/video&gt;
+&lt;h2&gt;Remotion&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://www.remotion.dev/&quot;&gt;Remotion&lt;/a&gt; is a tool for creating videos with React. I don’t know the first thing about React, but that’s OK because Remotion &lt;a href=&quot;https://x.com/Remotion/status/2013626968386765291&quot;&gt;recently released some agent skills&lt;/a&gt;, meaning we can now prompt Claude in natural language to create animations.&lt;/p&gt;
+&lt;p&gt;The other good news? Anything you create with Remotion is &lt;a href=&quot;https://www.remotion.pro/license&quot;&gt;free for commercial use for individuals and companies of up to three people&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;To get started with Remotion and Claude Code, follow &lt;a href=&quot;https://www.remotion.dev/docs/ai/claude-code&quot;&gt;these steps&lt;/a&gt; and come back here when Claude is running in your project’s folder.&lt;/p&gt;
+&lt;h2&gt;Animate your logo&lt;/h2&gt;
+&lt;p&gt;Now the fun part. Get a picture of your logo (preferably an SVG for scalable graphics, but other image formats work too). Place it in the &lt;code&gt;public/&lt;/code&gt; folder of your project so it is registered as an asset.&lt;/p&gt;
+&lt;p&gt;Now use the following prompt to create a composition from your logo:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;This is a Remotion project, so use the Remotion best practices skill. Start a new composition from @public/logo.svg, using the same dimensions as the image&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Claude will create the composition. Once it’s done, specify which parts of the image you’d like to animate.&lt;/p&gt;
+&lt;p&gt;This is the prompt I used for PixelWatcher’s logo:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Let's separate the various components of the animation. The isolated black square hanging from the bottom of the larger, rounded square is one. The rest of that rounded square and its contents are another. Then there's the &amp;quot;ixelWatcher&amp;quot; text, which is another component. And finally, the &amp;quot;Never miss a change.&amp;quot; tagline is the last component&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Claude will proceed to create separate components for each of those, naming them in the process. Feel free to change the names for something more descriptive – the trick is that you can now refer to each component by name to animate them separately.&lt;/p&gt;
+&lt;p&gt;Here are some example prompts I used:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;The animation will start with MainLogo and HangingSquare zoomed in at the centre of the composition. The other components aren't displayed.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Let's animate the HangingSquare. It starts as if it were part of MainLogo's outer black outline, and eases down into it final position&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;You get the idea.&lt;/p&gt;
+&lt;p&gt;Once you’re happy with the animation, click the “Render” button to export it as a video.&lt;/p&gt;
+&lt;h2&gt;Tips&lt;/h2&gt;
+&lt;p&gt;Sometimes, the exported video doesn’t match the preview exactly. If that happens, explain the issue to Claude and re-render until you’re satisfied with the result.&lt;/p&gt;
+&lt;p&gt;Don’t hesitate to ask Claude to polish up the animation:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Can you now make the animation smoother&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Or to clean up after itself:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Can you now simplify and optimise the code, making sure the animation stays the same&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;You can also ask Claude about the effects it’s been using, or spot them in the code directly: learning and remembering the names of those effects can make for better prompting in the future.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;PixelWatcher is currently under development. If you’d like updates ahead of launch and get early access, subscribe to the newsletter at &lt;a href=&quot;http://pixelwatcher.io&quot;&gt;pixelwatcher.io&lt;/a&gt;.&lt;/p&gt;</content>
+        <author>
+            <name>Yellow Raincoat</name>
+            <email>news@yellowraincoat.co.uk</email>
+        </author>
+    </entry>
+    <entry>
+        <title type="text">Another Hat in the Ring</title>
+        <link href="https://yellowraincoat.co.uk/blog/another-hat-in-the-ring"/>
+        <id>https://yellowraincoat.co.uk/blog/another-hat-in-the-ring</id>
+        <published>2026-01-13T00:00:00+00:00</published>
+        <updated>2026-01-13T16:54:27+00:00</updated>
+        <summary type="html">&lt;p&gt;&lt;img src=&quot;https://yellowraincoat.co.uk/img/containers/assets/blog/2026/01/13/another-hat-in-the-ring.webp/7210b6bc066ce048342ee51ab9d27ff5/another-hat-in-the-ring.webp&quot; width=&quot;0&quot; height=&quot;0&quot; alt=&quot;Another Hat in the Ring&quot;&gt;&lt;/p&gt;
+                                    &lt;p&gt;I’m building my own SaaS, joining a growing cohort of AI-powered developers choosing to go it alone. This is why, and what to expect.&lt;/p&gt;</summary>
+        <content type="html">&lt;p&gt;I’m building my own SaaS.&lt;/p&gt;
+&lt;p&gt;I’m joining a growing cohort of AI-powered developers choosing to go it alone. Or at least try.&lt;/p&gt;
+&lt;p&gt;This isn’t coming out of nowhere. The contracting market has been rough for the past three years. My LinkedIn inbox is eerily silent, when recruiters used to cold-contact me 2–3 times a week. This isn’t a brag – I have just never seen the market in such a terrible state for such a long time in my 20-year career.&lt;/p&gt;
+&lt;p&gt;Maybe it’s the lingering effects of Brexit. Or the post-Covid hiring spree still correcting. Or the competition from cheaper labour overseas. Or the AI storm making companies question their headcount. Or maybe it’s the PHP language finally, actually losing steam. Whatever the reason, it’s time for a rethink.&lt;/p&gt;
+&lt;p&gt;And now feels like a good time to give entrepreneurship – or “solopreneurship” – a try. Everyone seems to agree that recent model upgrades (Opus 4.5, Gemini 3, ChatGPT 5.2…) represent a new milestone in capability, so much so that unsupervised agentic work is now a &lt;a href=&quot;https://world.hey.com/dhh/promoting-ai-agents-3ee04945&quot;&gt;viable option&lt;/a&gt;. That changes the economics of building software as a small team... or a team of one.&lt;/p&gt;
+&lt;p&gt;Generative AI can make up for a lack of skills in many areas. A hardened backend developer like me should be able to conjure up half-decent frontend code without losing his mind. Heck, I even think I can come up with a respectable design, so long as the right &lt;a href=&quot;https://code.claude.com/docs/en/skills&quot;&gt;skills&lt;/a&gt; are loaded.&lt;/p&gt;
+&lt;p&gt;It’s too early to be specific about the product I’m intending to build. What I can say though is that it’s hardly an original idea. There are plenty of competitors doing more or less the same thing already, but I think I can do it simpler and cheaper. Instead of being disrupted, I’d rather do a bit of the disrupting myself.&lt;/p&gt;
+&lt;p&gt;To be clear though, this is an experiment. How far can I go on my own? Design and frontend are one thing, but how about marketing? UX? Customer support? SEO? (If that’s even a thing in the age of LLMs.)&lt;/p&gt;
+&lt;p&gt;There’s a lot of hype out there, and while I’m confident some of it is justified, I also want to see for myself. But there’s one thing I’m absolutely certain of: software development has changed forever. And there is no way in hell I’ll be late to the party.&lt;/p&gt;
+&lt;p&gt;As &lt;a href=&quot;https://steve-yegge.medium.com/the-death-of-the-stubborn-developer-b5e8f78d326b&quot;&gt;others&lt;/a&gt; have pointed out, developers resisting AI today look a lot like assembly programmers resisting high-level languages in the 80s – too slow, not “crafty” enough. History didn’t side with them.&lt;/p&gt;
+&lt;p&gt;The problem is that no one will let you tear down and rebuild your workflow during office hours. Some companies might encourage a level of experimentation, but it will always be constrained by culture and deadlines. It’s no coincidence that the most interesting AI setups are coming from independent developers and founders.&lt;/p&gt;
+&lt;p&gt;So I’m using this project as a playground. I’ll test tools, workflows, and ideas, and build an AI-powered setup that reflects this new era of software development. If the SaaS takes off, great. If not, the learning alone is worth it.&lt;/p&gt;
+&lt;p&gt;And I’m planning to write about it, too. Good old written blog posts, right here. So make sure to subscribe to the newsletter below if that sounds good. No videos with silly faces. Promise.&lt;/p&gt;</content>
+        <author>
+            <name>Yellow Raincoat</name>
+            <email>news@yellowraincoat.co.uk</email>
+        </author>
+    </entry>
+</feed>
