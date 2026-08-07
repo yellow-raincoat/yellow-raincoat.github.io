@@ -1,0 +1,50 @@
+{
+  "resources/css/main.css": {
+    "file": "assets/main-CTB3rFnH.css",
+    "name": "main",
+    "names": [
+      "main.css"
+    ],
+    "src": "resources/css/main.css",
+    "isEntry": true
+  },
+  "resources/css/partials/contact.css": {
+    "file": "assets/contact-a7b0tgqG.css",
+    "name": "contact",
+    "names": [
+      "contact.css"
+    ],
+    "src": "resources/css/partials/contact.css",
+    "isEntry": true
+  },
+  "resources/css/partials/newsletter.css": {
+    "file": "assets/newsletter-CLQ3GpcE.css",
+    "name": "newsletter",
+    "names": [
+      "newsletter.css"
+    ],
+    "src": "resources/css/partials/newsletter.css",
+    "isEntry": true
+  },
+  "resources/css/vendor/prism.css": {
+    "file": "assets/prism-DeUd4OME.css",
+    "name": "prism",
+    "names": [
+      "prism.css"
+    ],
+    "src": "resources/css/vendor/prism.css",
+    "isEntry": true
+  },
+  "resources/js/main.js": {
+    "file": "assets/main-DJGKACZj.js",
+    "name": "main",
+    "src": "resources/js/main.js",
+    "isEntry": true
+  },
+  "resources/js/vendor/prism.js": {
+    "file": "assets/prism-BHZwU77z.js",
+    "name": "prism",
+    "src": "resources/js/vendor/prism.js",
+    "isEntry": true
+  }
+}
